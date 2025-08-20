@@ -64,11 +64,11 @@ class _AnotacaoState extends State<Anotacao> {
   final _fromKey = GlobalKey<FormState>();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  String dia = '';
+  
   String emocao = '';
   final TextEditingController _textoController = TextEditingController();
   File? _imagem;
-
+  String dia = '';
   
 
   @override
