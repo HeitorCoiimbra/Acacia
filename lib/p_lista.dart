@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:acacia/funcoes_multiplataforma.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -128,62 +129,7 @@ class _ListaState extends State<Lista> {
                                   ),
                                   IconButton(
                                     icon: Icon(Icons.add_a_photo_outlined),
-                                    onPressed: () {
-                                      showModalBottomSheet(
-                                        context: context,
-                                        builder: (ctx) => Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Text("Adicionar imagem"),
-                                              ElevatedButton(
-                                                onPressed: () async {
-                                                  final f = await item
-                                                      .pegarImagemGaleria();
-                                                  if (f != null) {
-                                                    setState(() {
-                                                      item.imagens.add(f);
-                                                    });
-                                                  }
-                                                  Navigator.pop(ctx);
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.image_outlined,
-                                                      size: 28,
-                                                    ),
-                                                    SizedBox(width: 16),
-                                                    Text("Da galeria"),
-                                                  ],
-                                                ),
-                                              ),
-                                              ElevatedButton(onPressed: () async {
-                                                final f = await item
-                                                .pegarImagemCamera();
-                                                if (f != null){
-                                                  setState(() {
-                                                    item.imagens.add(f);
-                                                  });
-                                                }
-                                                Navigator.pop(ctx);
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.camera_alt_outlined,
-                                                    size: 28,
-                                                  ),
-                                                  SizedBox(width: 16,),
-                                                  Text("Da câmera"),
-                                                ],
-                                              ))
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                    onPressed: () => escolherImagem(context)
                                   ),
                                   IconButton(
                                     icon: Icon(Icons.delete,
