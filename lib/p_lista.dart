@@ -1,44 +1,17 @@
-import 'dart:io';
-import 'package:acacia/funcoes_multiplataforma.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'funcoes_multiplataforma.dart';
 
 class ObjLista {
   bool check;
   int posicao;
   String texto;
-  File? imagem;
-  List<File> imagens = [];
+  XFile? imagem;
+  List<XFile> imagens = [];
 
   ObjLista({this.check = false, this.texto = "", this.posicao = 0});
-
-  // Agora retorna o File selecionado
-  Future<File?> pegarImagemGaleria() async {
-    final img = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-    );
-    if (img == null) return null;
-
-    final file = File(img.path);
-    this.imagem = file;
-    return file;
-  }
-
-  Future<File?> pegarImagemCamera() async {
-    final img = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-    );
-    if (img == null) return null;
-
-    final file = File(img.path);
-    this.imagem = file;
-    return file;
-  }
 }
 
-//Página que tem como objetivo ser uma lista dinâmica que ajude o usuário a lembrar
-//de coisas que fez ou que ainda tenha que fazer, como tomar um remédio ou se fechou
-//a janela antes de sair de casa
 class Lista extends StatefulWidget {
   const Lista({super.key});
 
@@ -73,7 +46,7 @@ class _ListaState extends State<Lista> {
         title: const Text("Listas", style: TextStyle(fontSize: 20)),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: const Icon(Icons.add),
             tooltip: "Adicionar lista",
             onPressed: () {
               setState(() {
@@ -90,13 +63,13 @@ class _ListaState extends State<Lista> {
               itemCount: matrizDeListas.length,
               itemBuilder: (context, linha) {
                 final sublista = matrizDeListas[linha];
-                if (sublista.isEmpty) return SizedBox.shrink();
+                if (sublista.isEmpty) return const SizedBox.shrink();
 
                 return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   elevation: 4,
                   child: Padding(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -128,11 +101,18 @@ class _ListaState extends State<Lista> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.add_a_photo_outlined),
-                                    onPressed: () => escolherImagem(context)
+                                    icon: const Icon(Icons.add_a_photo_outlined),
+                                    onPressed: () async {
+                                      final img = await escolherImagem(context);
+                                      if (img != null) {
+                                        setState(() {
+                                          item.imagens.add(img);
+                                        });
+                                      }
+                                    },
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete,
+                                    icon: const Icon(Icons.delete,
                                         color: Colors.redAccent),
                                     onPressed: () {
                                       setState(() {
@@ -142,25 +122,24 @@ class _ListaState extends State<Lista> {
                                   ),
                                 ],
                               ),
+                              SizedBox(height: 10,),
 
-                              // mostra as imagens (horizontal)
                               if (item.imagens.isNotEmpty)
                                 SizedBox(
                                   height: 100,
                                   child: ListView.builder(
                                     shrinkWrap: true,
-                                    physics: NeverScrollableScrollPhysics(),
+                                    physics: const NeverScrollableScrollPhysics(),
                                     scrollDirection: Axis.horizontal,
                                     itemCount: item.imagens.length,
                                     itemBuilder: (_, i) {
                                       return Padding(
-                                        padding: EdgeInsets.only(right: 8),
+                                        padding: const EdgeInsets.only(right: 8),
                                         child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: Image.file(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: mostrarImagem(
                                             item.imagens[i],
-                                            height: 100,
+                                            altura: 100,
                                           ),
                                         ),
                                       );
@@ -176,7 +155,7 @@ class _ListaState extends State<Lista> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.add),
+                              icon: const Icon(Icons.add),
                               tooltip: "Adicionar item",
                               onPressed: () {
                                 setState(() {

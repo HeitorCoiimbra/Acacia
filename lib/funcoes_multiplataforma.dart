@@ -1,15 +1,24 @@
-import 'dart:io';
+import 'dart:io' show File, Platform;
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'firebase_options.dart';
+
+String pegaDispositivo() {
+  if (kIsWeb) return "web";
+  if (Platform.isAndroid) return "android";
+  if (Platform.isIOS) return "ios";
+  return "generico";
+}
 
 Future<XFile?> pegarImagemGaleria() async {
-  final img = await ImagePicker().pickImage(source: ImageSource.gallery);
-  return img; 
+  return await ImagePicker().pickImage(source: ImageSource.gallery);
 }
 
 Future<XFile?> pegarImagemCamera() async {
-  final img = await ImagePicker().pickImage(source: ImageSource.camera);
-  return img;
+  return await ImagePicker().pickImage(source: ImageSource.camera);
 }
 
 Future<XFile?> escolherImagem(BuildContext context) async {
@@ -25,7 +34,7 @@ Future<XFile?> escolherImagem(BuildContext context) async {
           ElevatedButton(
             onPressed: () async {
               final f = await pegarImagemGaleria();
-              Navigator.pop(ctx, f); 
+              Navigator.pop(ctx, f);
             },
             child: const Row(
               children: [
@@ -52,4 +61,32 @@ Future<XFile?> escolherImagem(BuildContext context) async {
       ),
     ),
   );
+}
+
+Widget mostrarImagem(XFile img, {double? altura}) {
+  if (kIsWeb) {
+    return Image.network(img.path, height: altura);
+  } else {
+    return Image.file(File(img.path), height: altura);
+  }
+}
+
+//imagem para o Firebase
+Future<String> uploadImagem(String caminho, XFile imagem) async {
+  final storageRef = FirebaseStorage.instance.ref().child(caminho);
+
+  if (kIsWeb) {
+    // no web, pega bytes e usa putData
+    final bytes = await imagem.readAsBytes();
+    final snapshot = await storageRef.putData(
+      bytes,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    return await snapshot.ref.getDownloadURL();
+  } else {
+    // mobile usa File normalmente
+    final file = File(imagem.path);
+    final snapshot = await storageRef.putFile(file);
+    return await snapshot.ref.getDownloadURL();
+  }
 }

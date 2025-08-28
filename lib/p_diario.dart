@@ -30,6 +30,7 @@ class _DiarioState extends State<Diario> {
       body: Column(
         children: [
           Expanded(
+            flex: 4,
             child: Container(
               margin: const EdgeInsets.all(20),
               child: TableCalendar(
