@@ -1,12 +1,8 @@
   import 'package:acacia/funcoes_multiplataforma.dart';
-  import 'package:acacia/p_listagem_anotacao.dart';
+  import 'package:acacia/p_diario/listagem_anotacao.dart';
   import 'package:cloud_firestore/cloud_firestore.dart';
-  import 'package:firebase_core/firebase_core.dart';
   import 'package:flutter/material.dart';
-  import 'dart:io';
   import 'package:image_picker/image_picker.dart';
-  import 'package:firebase_storage/firebase_storage.dart';
-import 'firebase_options.dart';
   
   //Página que salva as anotações do diário no banco de dados
   class Anotacao extends StatefulWidget {
@@ -18,8 +14,6 @@ import 'firebase_options.dart';
   }
 
   class _AnotacaoState extends State<Anotacao> {
-    //ObjPagina objPagina = ObjPagina();
-
     final _fromKey = GlobalKey<FormState>();
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -47,8 +41,7 @@ import 'firebase_options.dart';
             elevation: 3,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: ListView(
                 children: [
                   Row(
                     children: [
@@ -96,8 +89,9 @@ import 'firebase_options.dart';
                       ),
                     ],
                   ),
+                  Text(emocaoSelecionada),
                   SizedBox(height: 12),
-                  TextField(
+                  TextFormField(
                     controller: _textoController,
                     maxLines: 10,
                     decoration: InputDecoration(
@@ -110,14 +104,38 @@ import 'firebase_options.dart';
                     ),
                   ),
                   SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => Placeholder(),
-                    icon: Icon(Icons.image),
-                    label: Text("Adicionar imagem"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amberAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 250,
+                      child: ElevatedButton.icon(
+                        onPressed: (){}, 
+                        icon: Icon(Icons.question_answer), 
+                        label: Text("Adicionar uma pergunta?"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amberAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          )
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 250,
+                      child: ElevatedButton.icon(
+                        onPressed: () => escolherImagem(context),
+                        icon: Icon(Icons.image),
+                        label: Text("Adicionar imagem"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amberAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -130,31 +148,9 @@ import 'firebase_options.dart';
       );
     }
 
-    Future<void> _executaConsulta(
-      BuildContext context,
-      Query<Map<String, dynamic>> query,
-    ) async {
-      var snapshot = await query.get();
-      List<Map<String, dynamic>> anotacoes = snapshot.docs
-          .map((doc) => {"id": doc.id, ...doc.data()})
-          .toList();
-      _listarAnotacoes(context, anotacoes);
-    }
-
-    void _listarAnotacoes(
-      BuildContext context,
-      List<Map<String, dynamic>> anotacoes,
-    ) async {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ListagemAnotacoes(anotacoes: anotacoes),
-        ),
-      );
-    }
-
     void _registrarAnotacao() async {
-      List<String> urls = [];
+      //Parte que adicionaria imagens
+      {/*List<String> urls = [];
 
       for (int i = 0; i < imagens.length; i++) {
         final XFile img = imagens[i];
@@ -165,12 +161,11 @@ import 'firebase_options.dart';
     } catch (e) {
       debugPrint("Erro ao enviar imagem: $e");
     } 
-      }
-      if (_fromKey.currentState!.validate()) {
+      }*/}
         try {
           await firestore.collection('anotacoes').add({
             'texto': _textoController.text,
-            'imagens': urls,
+            //'imagens': urls,
             'dia': hoje,
             'emocao': emocaoSelecionada.isNotEmpty ? emocaoSelecionada : null,
           });
@@ -185,4 +180,3 @@ import 'firebase_options.dart';
         }
       }
     }
-  }

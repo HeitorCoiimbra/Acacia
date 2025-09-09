@@ -1,6 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'funcoes_multiplataforma.dart';
+import '../funcoes_multiplataforma.dart';
 
 class ObjLista {
   bool check;
@@ -21,6 +22,57 @@ class Lista extends StatefulWidget {
 
 class _ListaState extends State<Lista> {
   List<List<ObjLista>> matrizDeListas = [];
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  Future<void> salvarLista(int linha) async {
+    debugPrint("Botão salvar clicado para linha $linha");
+
+    if (linha >= matrizDeListas.length) {
+      debugPrint("Linha $linha não existe, criando nova...");
+      aumentarLinha();
+    }
+
+    if (matrizDeListas[linha].isEmpty) {
+      debugPrint("Linha $linha estava vazia, adicionando item...");
+      aumentarColunas(linha);
+    }
+
+    for (int i = 0; i < matrizDeListas[linha].length; i++) {
+      debugPrint("Salvando item $i: ${matrizDeListas[linha][i].texto}");
+      final List<String> urls = [];
+
+      for (int j = 0; j < matrizDeListas[linha][i].imagens.length; j++) {
+        final XFile img = matrizDeListas[linha][i].imagens[j];
+        final caminho = 'listas/linha_${linha}_item_${i}_img_${j}.jpg';
+        try {
+          final url = await uploadImagem(caminho, img);
+          debugPrint("Imagem enviada: $url");
+          urls.add(url);
+        } catch (e, st) {
+          debugPrint("Erro ao enviar imagem: $e");
+          debugPrintStack(stackTrace: st);
+        }
+      }
+      try {
+        final docRef = await firestore.collection('listas').add({
+          'texto': matrizDeListas[linha][i].texto,
+          'imagens': urls,
+          'check': matrizDeListas[linha][i].check,
+        });
+        debugPrint("Documento salvo com ID: ${docRef.id}");
+      } catch (e, st) {
+        debugPrint("Erro ao salvar lista: $e");
+        debugPrintStack(stackTrace: st);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro: $e")),
+        );
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Lista salva com sucesso!")),
+    );
+  }
 
   void aumentarLinha() {
     matrizDeListas.add([ObjLista()]);
@@ -40,11 +92,13 @@ class _ListaState extends State<Lista> {
 
   @override
   Widget build(BuildContext context) {
+    
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.amberAccent,
         title: const Text("Listas", style: TextStyle(fontSize: 20)),
-        actions: [
+        actions: [    
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: "Adicionar lista",
@@ -66,14 +120,23 @@ class _ListaState extends State<Lista> {
                 if (sublista.isEmpty) return const SizedBox.shrink();
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
                   elevation: 4,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // cada objeto da sublista
+                        Align(
+                          alignment: Alignment(0.95, 0),
+                          child: ElevatedButton(
+                            onPressed: () => salvarLista(linha),
+                            child: const Text("Salvar lista"),
+                          ),
+                        ),
                         ...sublista.asMap().entries.map((entry) {
                           final coluna = entry.key;
                           final item = entry.value;
@@ -101,7 +164,9 @@ class _ListaState extends State<Lista> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.add_a_photo_outlined),
+                                    icon: const Icon(
+                                      Icons.add_a_photo_outlined,
+                                    ),
                                     onPressed: () async {
                                       final img = await escolherImagem(context);
                                       if (img != null) {
@@ -112,8 +177,10 @@ class _ListaState extends State<Lista> {
                                     },
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.redAccent),
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.redAccent,
+                                    ),
                                     onPressed: () {
                                       setState(() {
                                         removerColuna(linha, coluna);
@@ -122,21 +189,25 @@ class _ListaState extends State<Lista> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 10,),
-
+                              const SizedBox(height: 10),
                               if (item.imagens.isNotEmpty)
                                 SizedBox(
                                   height: 100,
                                   child: ListView.builder(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     scrollDirection: Axis.horizontal,
                                     itemCount: item.imagens.length,
                                     itemBuilder: (_, i) {
                                       return Padding(
-                                        padding: const EdgeInsets.only(right: 8),
+                                        padding: const EdgeInsets.only(
+                                          right: 8,
+                                        ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           child: mostrarImagem(
                                             item.imagens[i],
                                             altura: 100,
@@ -149,8 +220,6 @@ class _ListaState extends State<Lista> {
                             ],
                           );
                         }).toList(),
-
-                        // botão de adicionar coluna à linha atual
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
