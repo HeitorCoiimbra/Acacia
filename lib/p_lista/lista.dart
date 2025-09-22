@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';          
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../funcoes_multiplataforma.dart';
@@ -24,44 +25,40 @@ class _ListaState extends State<Lista> {
   List<List<ObjLista>> matrizDeListas = [];
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  Future<void> salvarLista(int linha) async {
-    debugPrint("Botão salvar clicado para linha $linha");
+  String get _uid => FirebaseAuth.instance.currentUser!.uid;
+  CollectionReference<Map<String, dynamic>> get _userListasCol =>
+      firestore.collection('users').doc(_uid).collection('listas');
 
+  Future<void> salvarLista(int linha) async {
     if (linha >= matrizDeListas.length) {
-      debugPrint("Linha $linha não existe, criando nova...");
       aumentarLinha();
     }
 
     if (matrizDeListas[linha].isEmpty) {
-      debugPrint("Linha $linha estava vazia, adicionando item...");
       aumentarColunas(linha);
     }
 
     for (int i = 0; i < matrizDeListas[linha].length; i++) {
-      debugPrint("Salvando item $i: ${matrizDeListas[linha][i].texto}");
       final List<String> urls = [];
 
       for (int j = 0; j < matrizDeListas[linha][i].imagens.length; j++) {
         final XFile img = matrizDeListas[linha][i].imagens[j];
-        final caminho = 'listas/linha_${linha}_item_${i}_img_${j}.jpg';
+        final caminho = 'users/$_uid/listas/linha_${linha}_item_${i}_img_${j}.jpg';
         try {
           final url = await uploadImagem(caminho, img);
-          debugPrint("Imagem enviada: $url");
           urls.add(url);
         } catch (e, st) {
-          debugPrint("Erro ao enviar imagem: $e");
           debugPrintStack(stackTrace: st);
         }
       }
+
       try {
-        final docRef = await firestore.collection('listas').add({
+        final docRef = await _userListasCol.add({
           'texto': matrizDeListas[linha][i].texto,
           'imagens': urls,
           'check': matrizDeListas[linha][i].check,
         });
-        debugPrint("Documento salvo com ID: ${docRef.id}");
       } catch (e, st) {
-        debugPrint("Erro ao salvar lista: $e");
         debugPrintStack(stackTrace: st);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Erro: $e")),
@@ -92,20 +89,16 @@ class _ListaState extends State<Lista> {
 
   @override
   Widget build(BuildContext context) {
-    
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.amberAccent,
         title: const Text("Listas", style: TextStyle(fontSize: 20)),
-        actions: [    
+        actions: [
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: "Adicionar lista",
             onPressed: () {
-              setState(() {
-                aumentarLinha();
-              });
+              setState(aumentarLinha);
             },
           ),
         ],
@@ -121,9 +114,7 @@ class _ListaState extends State<Lista> {
 
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
+                      vertical: 8, horizontal: 16),
                   elevation: 4,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -148,31 +139,28 @@ class _ListaState extends State<Lista> {
                                 children: [
                                   Checkbox(
                                     value: item.check,
-                                    onChanged: (v) => setState(() {
-                                      item.check = v!;
-                                    }),
+                                    onChanged: (v) =>
+                                        setState(() => item.check = v!),
                                   ),
                                   Expanded(
                                     child: TextFormField(
                                       initialValue: item.texto,
-                                      onChanged: (v) => setState(() {
-                                        item.texto = v;
-                                      }),
+                                      onChanged: (v) =>
+                                          setState(() => item.texto = v),
                                       decoration: InputDecoration(
                                         hintText: "Item $coluna",
                                       ),
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(
-                                      Icons.add_a_photo_outlined,
-                                    ),
+                                    icon:
+                                        const Icon(Icons.add_a_photo_outlined),
                                     onPressed: () async {
-                                      final img = await escolherImagem(context);
+                                      final img =
+                                          await escolherImagem(context);
                                       if (img != null) {
-                                        setState(() {
-                                          item.imagens.add(img);
-                                        });
+                                        setState(() =>
+                                            item.imagens.add(img));
                                       }
                                     },
                                   ),
@@ -181,11 +169,8 @@ class _ListaState extends State<Lista> {
                                       Icons.delete,
                                       color: Colors.redAccent,
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        removerColuna(linha, coluna);
-                                      });
-                                    },
+                                    onPressed: () =>
+                                        setState(() => removerColuna(linha, coluna)),
                                   ),
                                 ],
                               ),
@@ -201,13 +186,11 @@ class _ListaState extends State<Lista> {
                                     itemCount: item.imagens.length,
                                     itemBuilder: (_, i) {
                                       return Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: 8,
-                                        ),
+                                        padding:
+                                            const EdgeInsets.only(right: 8),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           child: mostrarImagem(
                                             item.imagens[i],
                                             altura: 100,
@@ -227,9 +210,7 @@ class _ListaState extends State<Lista> {
                               icon: const Icon(Icons.add),
                               tooltip: "Adicionar item",
                               onPressed: () {
-                                setState(() {
-                                  aumentarColunas(linha);
-                                });
+                                setState(() => aumentarColunas(linha));
                               },
                             ),
                           ],

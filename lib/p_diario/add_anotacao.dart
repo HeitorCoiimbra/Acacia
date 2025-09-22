@@ -1,182 +1,307 @@
-  import 'package:acacia/funcoes_multiplataforma.dart';
-  import 'package:acacia/p_diario/listagem_anotacao.dart';
-  import 'package:cloud_firestore/cloud_firestore.dart';
-  import 'package:flutter/material.dart';
-  import 'package:image_picker/image_picker.dart';
-  
-  //Página que salva as anotações do diário no banco de dados
-  class Anotacao extends StatefulWidget {
-    final DateTime dia;
-    const Anotacao({super.key, required this.dia});
+import 'package:acacia/funcoes_multiplataforma.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';    
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
-    @override
-    State<Anotacao> createState() => _AnotacaoState();
+class Anotacao extends StatefulWidget {
+  final DateTime dia;
+  const Anotacao({Key? key, required this.dia}) : super(key: key);
+
+  @override
+  State<Anotacao> createState() => _AnotacaoState();
+}
+
+class _AnotacaoState extends State<Anotacao> {
+  final _formKey = GlobalKey<FormState>();
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  String get _uid => FirebaseAuth.instance.currentUser!.uid;
+  CollectionReference<Map<String, dynamic>> get _userAnotacoesCol =>
+      firestore.collection('users').doc(_uid).collection('anotacoes');
+
+  List<String> emocoes = ["😊", "😢", "😡", "😴"];
+  String emocaoSelecionada = "";
+
+  final _textoController = TextEditingController();
+  List<XFile> imagens = [];
+
+  final List<String> perguntasPadroes = [
+    'O que me deixou ansioso hoje?',
+    'Como eu tentei me acalmar?',
+    'Que pensamento se repetiu?',
+    'Pelo que sou grato hoje?'
+  ];
+  final Map<String, String> reflexoes = {};
+
+  @override
+  Widget build(BuildContext context) {
+    final hojeFmt = DateFormat('dd/MM/yyyy').format(widget.dia);
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.amberAccent,
+        title: const Text("Anotação do dia"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              Row(
+                children: [
+                  Text(hojeFmt,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed: _registrarAnotacao,
+                    child: const Text("Salvar"),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: emocoes.map((e) {
+                  final val = e == "😊"
+                      ? "feliz"
+                      : e == "😢"
+                          ? "triste"
+                          : e == "😡"
+                              ? "raiva"
+                              : "tedio";
+                  return IconButton(
+                    onPressed: () =>
+                        setState(() => emocaoSelecionada = val),
+                    icon: Text(e, style: const TextStyle(fontSize: 30)),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _textoController,
+                maxLines: 6,
+                decoration: InputDecoration(
+                  hintText: "Escreva seus pensamentos aqui...",
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Campo vazio' : null,
+              ),
+              const SizedBox(height: 16),
+
+              if (reflexoes.isNotEmpty) ...[
+                Text(
+                  "Reflexões (${reflexoes.length}):",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Column(
+                  children: reflexoes.entries.map((entry) {
+                    return ListTile(
+                      title: Text(entry.key),
+                      subtitle: Text(entry.value),
+                      trailing: IconButton(
+                        icon:
+                            const Icon(Icons.edit, color: Colors.amberAccent),
+                        onPressed: () =>
+                            _abrirDialogoReflexao(editQuestion: entry.key),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton.icon(
+                  onPressed: () => _abrirDialogoReflexao(),
+                  icon: const Icon(Icons.question_answer),
+                  label: const Text("Adicionar Reflexão"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amberAccent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final img = await escolherImagem(context);
+                    if (img != null) setState(() => imagens.add(img));
+                  },
+                  icon: const Icon(Icons.image),
+                  label: const Text("Adicionar imagem"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amberAccent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  class _AnotacaoState extends State<Anotacao> {
-    final _fromKey = GlobalKey<FormState>();
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  void _abrirDialogoReflexao({String? editQuestion}) {
+    final isEdit = editQuestion != null;
+    String? selectedPergunta = editQuestion;
+    final respostaController = TextEditingController(
+        text: editQuestion != null ? reflexoes[editQuestion] : '');
+    final localPerguntas = List<String>.from(perguntasPadroes);
 
-    List<String> emocoes = ["😊", "😢", "😡", "😴"];
-    String emocaoSelecionada = "";
-    final TextEditingController _textoController = TextEditingController();
-    List<XFile> imagens = [];
-    String dia = '';
-    String hoje =
-        "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}";
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctxDialog, setStateDialog) {
+          final available = localPerguntas
+              .where((p) =>
+                  p == editQuestion || !reflexoes.containsKey(p))
+              .toList();
 
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amberAccent,
-          title: const Text("Anotação do dia"),
-        ),
-        body: Padding(
-          padding: EdgeInsets.all(16),
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ListView(
+          return AlertDialog(
+            title: Text(isEdit ? 'Editar Reflexão' : 'Nova Reflexão'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        hoje,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(width: 250),
-                      ElevatedButton(
-                        onPressed: () => _registrarAnotacao(),
-                        child: Text("Salvar"),
-                      ),
-                    ],
+                  DropdownButtonFormField<String>(
+                    value: selectedPergunta,
+                    hint: const Text("Selecione uma pergunta"),
+                    items: available
+                        .map((p) =>
+                            DropdownMenuItem(value: p, child: Text(p)))
+                        .toList(),
+                    onChanged: (v) => setStateDialog(() {
+                      selectedPergunta = v;
+                      respostaController.text = reflexoes[v] ?? '';
+                    }),
                   ),
-                  SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      IconButton(
-                        onPressed: () {setState(() {
-                          emocaoSelecionada = "feliz";
-                        });},
-                        icon: Text("😊", style: TextStyle(fontSize: 30)),
-                      ),
-                      IconButton(
-                        onPressed: () {setState(() {
-                          emocaoSelecionada = "triste";
-                        });},
-                        icon: Text("😢", style: TextStyle(fontSize: 30)),
-                      ),
-                      IconButton(
-                        onPressed: () {setState(() {
-                          emocaoSelecionada = "raiva";
-                        });},
-                        icon: Text("😡", style: TextStyle(fontSize: 30)),
-                      ),
-                      IconButton(
-                        onPressed: () {setState(() {
-                          emocaoSelecionada = "tedio";
-                        });},
-                        icon: Text("😴", style: TextStyle(fontSize: 30)),
-                      ),
-                    ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: respostaController,
+                    decoration: const InputDecoration(labelText: "Resposta"),
+                    maxLines: 3,
                   ),
-                  Text(emocaoSelecionada),
-                  SizedBox(height: 12),
-                  TextFormField(
-                    controller: _textoController,
-                    maxLines: 10,
-                    decoration: InputDecoration(
-                      hintText: "Escreva seus pensamentos aqui...",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 250,
-                      child: ElevatedButton.icon(
-                        onPressed: (){}, 
-                        icon: Icon(Icons.question_answer), 
-                        label: Text("Adicionar uma pergunta?"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amberAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          )
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 250,
-                      child: ElevatedButton.icon(
-                        onPressed: () => escolherImagem(context),
-                        icon: Icon(Icons.image),
-                        label: Text("Adicionar imagem"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amberAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () {
+                      final novaPerguntaController = TextEditingController();
+                      showDialog(
+                        context: ctxDialog,
+                        builder: (ctx2) => AlertDialog(
+                          title: const Text('Pergunta Personalizada'),
+                          content: TextField(
+                            controller: novaPerguntaController,
+                            decoration:
+                                const InputDecoration(labelText: 'Pergunta'),
                           ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx2),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                final p =
+                                    novaPerguntaController.text.trim();
+                                if (p.isNotEmpty &&
+                                    !localPerguntas.contains(p)) {
+                                  setStateDialog(() {
+                                    localPerguntas.add(p);
+                                    selectedPergunta = p;
+                                    respostaController.clear();
+                                  });
+                                }
+                                Navigator.pop(ctx2);
+                              },
+                              child: const Text('Adicionar'),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text("Outra pergunta"),
                   ),
-                  SizedBox(height: 18),
                 ],
               ),
             ),
-          ),
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctxDialog),
+                child: const Text("Cancelar"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final p = selectedPergunta;
+                  final r = respostaController.text.trim();
+                  if (p != null && r.isNotEmpty) {
+                    setState(() {
+                      if (!perguntasPadroes.contains(p)) {
+                        perguntasPadroes.add(p);
+                      }
+                      reflexoes[p] = r;
+                    });
+                    Navigator.pop(ctxDialog);
+                  }
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _registrarAnotacao() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      final dataDoc = {
+        'texto': _textoController.text,
+        'data': Timestamp.fromDate(widget.dia),
+        'emocao':
+            emocaoSelecionada.isNotEmpty ? emocaoSelecionada : null,
+        'temReflexoes': reflexoes.isNotEmpty,
+        'perguntas': reflexoes.keys.toList(),
+      };
+
+      final docRef = await _userAnotacoesCol.add(dataDoc);
+
+      for (var entry in reflexoes.entries) {
+        await docRef.collection('reflexoes').add({
+          'pergunta': entry.key,
+          'resposta': entry.value,
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Anotação registrada com sucesso")),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao salvar: $e")),
       );
     }
-
-    void _registrarAnotacao() async {
-      //Parte que adicionaria imagens
-      {/*List<String> urls = [];
-
-      for (int i = 0; i < imagens.length; i++) {
-        final XFile img = imagens[i];
-    final caminho = 'anotacoes/${hoje}_img_$i.jpg';
-    try {
-      final url = await uploadImagem(caminho, img);
-      urls.add(url);
-    } catch (e) {
-      debugPrint("Erro ao enviar imagem: $e");
-    } 
-      }*/}
-        try {
-          await firestore.collection('anotacoes').add({
-            'texto': _textoController.text,
-            //'imagens': urls,
-            'dia': hoje,
-            'emocao': emocaoSelecionada.isNotEmpty ? emocaoSelecionada : null,
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Anotação registrada com sucesso")),
-          );
-          _fromKey.currentState!.reset();
-        } catch (e) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Erro: $e")));
-        }
-      }
-    }
+  }
+}

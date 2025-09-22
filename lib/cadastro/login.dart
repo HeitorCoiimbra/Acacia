@@ -1,4 +1,5 @@
 import 'package:acacia/cadastro/signup.dart';
+import 'package:acacia/tela_principal.dart';
 import 'package:flutter/material.dart';
 import 'authentication.dart';
 
@@ -15,14 +16,11 @@ class Login extends StatelessWidget {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: LoginForm(),
-          ),
+          const Padding(padding: EdgeInsets.all(16.0), child: LoginForm()),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(width: 30,),
+              const SizedBox(width: 30),
               const Text(
                 'Ainda não passui cadastro? ',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
@@ -30,8 +28,8 @@ class Login extends StatelessWidget {
               GestureDetector(
                 onTap: () {
                   Navigator.push(
-                    context, 
-                  MaterialPageRoute(builder: (context) => Signup()),
+                    context,
+                    MaterialPageRoute(builder: (context) => Signup()),
                   );
                 },
                 child: const Text(
@@ -74,9 +72,7 @@ class _LoginFormState extends State<LoginForm> {
               prefixIcon: Icon(Icons.email_outlined),
               labelText: 'Email',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(100.0),
-                ),
+                borderRadius: BorderRadius.all(Radius.circular(100.0)),
               ),
             ),
             validator: (value) {
@@ -89,17 +85,13 @@ class _LoginFormState extends State<LoginForm> {
               email = val;
             },
           ),
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
           TextFormField(
             decoration: InputDecoration(
               labelText: 'Senha',
               prefixIcon: const Icon(Icons.lock_outline),
               border: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(100.0),
-                ),
+                borderRadius: BorderRadius.all(Radius.circular(100.0)),
               ),
               suffixIcon: GestureDetector(
                 onTap: () {
@@ -137,28 +129,32 @@ class _LoginFormState extends State<LoginForm> {
                   AuthenticationHelper()
                       .signIn(email: email!, password: senha!)
                       .then((result) {
-                    if (result == null) {
-                      Navigator.pop<bool>(
-                          context,
-                          true);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                          AuthenticationHelper().traduzirRetorno(result),
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ));
-                    }
-                  });
+                        if (result == null) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const TelaPrincipal(),
+                            ),
+                            (route) => false,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AuthenticationHelper().traduzirRetorno(result),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          );
+                        }
+                      });
                 }
               },
               style: ElevatedButton.styleFrom(
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(24.0)))),
-              child: const Text(
-                'Login',
-                style: TextStyle(fontSize: 24),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(24.0)),
+                ),
               ),
+              child: const Text('Login', style: TextStyle(fontSize: 24)),
             ),
           ),
         ],

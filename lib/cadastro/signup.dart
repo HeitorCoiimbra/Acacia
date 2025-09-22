@@ -1,3 +1,4 @@
+import 'package:acacia/tela_principal.dart';
 import 'package:flutter/material.dart';
 import 'authentication.dart';
 
@@ -14,11 +15,8 @@ class Signup extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          const SizedBox(height: 80,),
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: SignupForm(),
-          ),
+          const SizedBox(height: 80),
+          const Padding(padding: EdgeInsets.all(8.0), child: SignupForm()),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -28,8 +26,10 @@ class Signup extends StatelessWidget {
                   children: [
                     const Text(
                       "Já possui cadastro?",
-                      style: 
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                     ),
                     GestureDetector(
                       onTap: () {
@@ -38,12 +38,12 @@ class Signup extends StatelessWidget {
                       child: const Text(
                         'Faça o login',
                         style: TextStyle(fontSize: 20, color: Colors.blue),
-                      )
-                    )
+                      ),
+                    ),
                   ],
                 ),
               ],
-            ) 
+            ),
           ),
         ],
       ),
@@ -73,9 +73,7 @@ class _SignupFormState extends State<SignupForm> {
   @override
   Widget build(BuildContext context) {
     var border = const OutlineInputBorder(
-      borderRadius: BorderRadius.all(
-        Radius.circular(100.0),
-      ),
+      borderRadius: BorderRadius.all(Radius.circular(100.0)),
     );
 
     var space = const SizedBox(height: 10);
@@ -87,9 +85,10 @@ class _SignupFormState extends State<SignupForm> {
           // email
           TextFormField(
             decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.email_outlined),
-                labelText: 'Email',
-                border: border),
+              prefixIcon: const Icon(Icons.email_outlined),
+              labelText: 'Email',
+              border: border,
+            ),
             validator: (value) {
               if (value!.isEmpty) {
                 return 'Campo vazio';
@@ -200,24 +199,31 @@ class _SignupFormState extends State<SignupForm> {
                   AuthenticationHelper()
                       .signUp(email: email!, password: password!)
                       .then((result) {
-                    if (result == null) {
-                      Navigator.pop<bool>(
-                          context,
-                          true);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                          AuthenticationHelper().traduzirRetorno(result),
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ));
-                    }
-                  });
+                        if (result == null) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const TelaPrincipal(),
+                            ),
+                            (route) => false,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AuthenticationHelper().traduzirRetorno(result),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          );
+                        }
+                      });
                 }
               },
               style: ElevatedButton.styleFrom(
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(24.0)))),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(24.0)),
+                ),
+              ),
               child: const Text('Registre-se'),
             ),
           ),
