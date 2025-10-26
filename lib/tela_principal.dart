@@ -1,5 +1,6 @@
 import 'package:acacia/cadastro/authentication.dart';
 import 'package:acacia/p_diario/diario.dart';
+import 'package:acacia/p_dicas/dicas.dart';
 import 'package:acacia/p_lista/lista.dart';
 import 'package:firebase_auth/firebase_auth.dart';  
 import 'package:flutter/material.dart';
@@ -13,7 +14,7 @@ class TelaPrincipal extends StatefulWidget {
 
 class _TelaPrincipalState extends State<TelaPrincipal> {
   int paginaAtual = 0;
-  final paginas = const [Lista(), Diario(), Placeholder()];
+  final paginas = const [Lista(), Diario(), Dicas()];
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +53,8 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
             label: "Diário",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Placeholder",
+            icon: Icon(Icons.library_books),
+            label: "Dicas",
           ),
         ],
         currentIndex: paginaAtual,
