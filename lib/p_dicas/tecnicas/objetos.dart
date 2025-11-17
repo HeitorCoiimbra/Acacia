@@ -5,7 +5,8 @@ class DistratibilidadeObjetos extends StatefulWidget {
   const DistratibilidadeObjetos({super.key});
 
   @override
-  State<DistratibilidadeObjetos> createState() => _DistratibilidadeObjetosState();
+  State<DistratibilidadeObjetos> createState() =>
+      _DistratibilidadeObjetosState();
 }
 
 class _DistratibilidadeObjetosState extends State<DistratibilidadeObjetos>
@@ -26,12 +27,14 @@ class _DistratibilidadeObjetosState extends State<DistratibilidadeObjetos>
       duration: const Duration(seconds: 1), // ritmo ~60 BPM
     );
 
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.addStatusListener((status) async {
-      if (status == AnimationStatus.forward || status == AnimationStatus.reverse) {
+      if (status == AnimationStatus.forward ||
+          status == AnimationStatus.reverse) {
         await _playSound();
         setState(() {
           mensagem = "🟢 Nomeie algo do ambiente";
@@ -56,10 +59,7 @@ class _DistratibilidadeObjetosState extends State<DistratibilidadeObjetos>
     try {
       // 🔹 Garante que o player reinicie corretamente o som
       await _audioPlayer.stop();
-      await _audioPlayer.play(
-        AssetSource('sons/sino.mp3'),
-        volume: 1.0,
-      );
+      await _audioPlayer.play(AssetSource('sons/sino.mp3'), volume: 1.0);
     } catch (e) {
       debugPrint("Erro ao tocar som: $e");
     }
@@ -146,11 +146,10 @@ class _DistratibilidadeObjetosState extends State<DistratibilidadeObjetos>
                         animation: _animation,
                         builder: (context, child) {
                           double posicaoX =
-                              (largura - (2 * (raio + paredeEspessura))) * _animation.value + paredeEspessura;
-                          return Positioned(
-                            left: posicaoX,
-                            child: child!,
-                          );
+                              (largura - (2 * (raio + paredeEspessura))) *
+                                  _animation.value +
+                              paredeEspessura;
+                          return Positioned(left: posicaoX, child: child!);
                         },
                         child: CircleAvatar(
                           radius: raio,
@@ -180,9 +179,13 @@ class _DistratibilidadeObjetosState extends State<DistratibilidadeObjetos>
             ElevatedButton.icon(
               onPressed: _emExecucao ? _finalizarExercicio : _iniciarExercicio,
               icon: Icon(_emExecucao ? Icons.stop : Icons.play_arrow),
-              label: Text(_emExecucao ? "Finalizar exercício" : "Iniciar exercício"),
+              label: Text(
+                _emExecucao ? "Finalizar exercício" : "Iniciar exercício",
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _emExecucao ? Colors.redAccent : Colors.amberAccent,
+                backgroundColor: _emExecucao
+                    ? Colors.redAccent
+                    : Colors.amberAccent,
                 foregroundColor: Colors.black,
                 minimumSize: const Size(double.infinity, 50),
               ),

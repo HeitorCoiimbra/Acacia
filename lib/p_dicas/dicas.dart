@@ -59,7 +59,7 @@ class Dicas extends StatelessWidget {
                 context,
                 "Técnica 5-4-3-2-1",
                 "Ajuda a reconectar-se com o momento presente através dos sentidos.",
-                const Distratibilidade54321(),
+                const Tecnica54321(),
               ),
             ],
           ),
@@ -80,7 +80,7 @@ class Dicas extends StatelessWidget {
                 context,
                 "Respiração controlada",
                 "Acalma corpo e mente, auxiliando no controle fisiológico da ansiedade.",
-                const RespiracaoControlada(),
+                RespiracaoControlada(),
               ),
             ],
           ),
@@ -99,7 +99,7 @@ class Dicas extends StatelessWidget {
             children: [
               _tecnicaCard(
                 context,
-                "Reavaliar pensamentos",
+                "Repensar pensamentos",
                 "Ajuda a identificar padrões automáticos e substituí-los por ideias mais realistas.",
                 const RepensarPensamento(),
               ),

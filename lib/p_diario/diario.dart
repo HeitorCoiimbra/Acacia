@@ -15,7 +15,7 @@ class Diario extends StatefulWidget {
 }
 
 class _DiarioState extends State<Diario> {
-  DateTime diaFoco = DateTime.now();
+  DateTime diaFoco = DateTime.now();  
   DateTime? diaSelecionado;
 
   String? emocaoSelecionada;
@@ -46,36 +46,42 @@ class _DiarioState extends State<Diario> {
         title: const Text('Diário', style: TextStyle(fontSize: 20)),
       ),
       body: Column(
+  children: [
+    Expanded(
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          Expanded(
-            flex: 4,
-            child: TableCalendar(
-              focusedDay: diaSelecionado ?? diaFoco,
-              firstDay: DateTime.utc(2010, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              selectedDayPredicate: (d) => isSameDay(d, diaSelecionado),
-              onDaySelected: (sel, foc) {
-                setState(() {
-                  diaSelecionado = sel;
-                  diaFoco = foc;
-                });
-                if (!sel.isAfter(DateTime.now())) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => Anotacao(dia: sel)),
-                  );
-                }
-              },
-              calendarStyle: const CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Colors.amberAccent,
-                  shape: BoxShape.circle,
-                ),
+          TableCalendar(
+            focusedDay: diaSelecionado ?? diaFoco,
+            firstDay: DateTime.utc(2010, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            selectedDayPredicate: (d) => isSameDay(d, diaSelecionado),
+            rowHeight: 45,
+            daysOfWeekHeight: 30,
+            onDaySelected: (sel, foc) {
+              setState(() {
+                diaSelecionado = sel;
+                diaFoco = foc;
+              });
+              if (!sel.isAfter(DateTime.now())) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => Anotacao(dia: sel)),
+                );
+              }
+            },
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: Colors.amberAccent,
+                shape: BoxShape.circle,
               ),
             ),
           ),
+
+          const SizedBox(height: 16),
+
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 ElevatedButton(
@@ -92,6 +98,10 @@ class _DiarioState extends State<Diario> {
           ),
         ],
       ),
+    ),
+  ],
+),
+
     );
   }
 

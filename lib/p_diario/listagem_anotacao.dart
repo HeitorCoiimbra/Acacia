@@ -23,7 +23,7 @@ class ListagemAnotacoes extends StatelessWidget {
           return ListTile(
             title: Text("Dia: $dataFmt"),
             subtitle: Text(
-              "Emoção: ${a['emocao'] ?? 'N/A'}\nAnotação: ${a['texto'] ?? ''}",
+              "Emoção: ${a['emocao'] ?? 'N/A'}\nAnotação: ${a['texto'] ?? ''} \nPossui refleção: ${a['temReflexoes'] ? 'Sim' : 'Não'}",
             ),
             isThreeLine: true,
 
