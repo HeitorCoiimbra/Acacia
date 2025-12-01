@@ -18,15 +18,15 @@ class Dicas extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            "Aqui você encontra técnicas simples e comprovadas para lidar com a ansiedade. "
-            "Elas funcionam melhor quando praticadas com frequência — não apenas em momentos de crise. "
-            "A prática regular ajuda o corpo e a mente a reconhecerem os sinais e reagirem com mais calma.",
+            "Estas são técnicas simples que podem auxiliar no manejo da ansiedade. "
+            "Elas não substituem acompanhamento médico ou uso de medicamentos, mas podem ser um apoio importante no dia a dia. "
+            "O ideal é praticá-las regularmente, mesmo quando não estiver em crise, para que corpo e mente aprendam a responder com mais calma.",
             style: TextStyle(fontSize: 16, height: 1.4),
             textAlign: TextAlign.justify,
           ),
           const SizedBox(height: 10),
           const Text(
-            "💡 Lembre-se: pratique com atenção plena. Observe sua respiração e as sensações do corpo. "
+            "Lembre-se: pratique com atenção plena. Observe sua respiração e as sensações do corpo. "
             "Se a mente se distrair, apenas perceba e volte ao foco, sem julgamentos.",
             style: TextStyle(
               fontSize: 15,
@@ -124,10 +124,7 @@ class Dicas extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => destino),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => destino));
           },
           child: Padding(
             padding: const EdgeInsets.all(12),

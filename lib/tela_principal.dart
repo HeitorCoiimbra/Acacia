@@ -45,7 +45,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
       ),
       body: Center(child: paginas[paginaAtual]),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.amberAccent.shade100,
+        backgroundColor: Colors.amberAccent,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.list), label: "Listas"),
           BottomNavigationBarItem(

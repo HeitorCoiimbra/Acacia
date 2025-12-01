@@ -1,6 +1,6 @@
 import 'package:acacia/funcoes_multiplataforma.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';    
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -21,10 +21,14 @@ class _AnotacaoState extends State<Anotacao> {
   CollectionReference<Map<String, dynamic>> get _userAnotacoesCol =>
       firestore.collection('users').doc(_uid).collection('anotacoes');
 
-  List<String> emocoes = ["😊", "😢", "😡", "😴"];
+  final List<String> emocoes = ["😊", "😢", "😡", "😴"];
   String emocaoSelecionada = "";
 
-  final _textoController = TextEditingController();
+  final TextEditingController _textoController = TextEditingController();
+
+  String pasta = "diario";
+
+  // Apenas imagens escolhidas pelo usuário (XFile); não exibimos URLs salvas nesta tela
   List<XFile> imagens = [];
 
   final List<String> perguntasPadroes = [
@@ -50,11 +54,13 @@ class _AnotacaoState extends State<Anotacao> {
           key: _formKey,
           child: ListView(
             children: [
+              // Cabeçalho com data e botão salvar
               Row(
                 children: [
-                  Text(hojeFmt,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    hojeFmt,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                   const Spacer(),
                   ElevatedButton(
                     onPressed: _registrarAnotacao,
@@ -64,6 +70,7 @@ class _AnotacaoState extends State<Anotacao> {
               ),
               const SizedBox(height: 12),
 
+              // Emoções
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: emocoes.map((e) {
@@ -75,29 +82,28 @@ class _AnotacaoState extends State<Anotacao> {
                               ? "raiva"
                               : "tedio";
                   return IconButton(
-                    onPressed: () =>
-                        setState(() => emocaoSelecionada = val),
+                    onPressed: () => setState(() => emocaoSelecionada = val),
                     icon: Text(e, style: const TextStyle(fontSize: 30)),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 12),
 
+              // Texto principal
               TextFormField(
                 controller: _textoController,
                 maxLines: 6,
                 decoration: InputDecoration(
                   hintText: "Escreva seus pensamentos aqui...",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   filled: true,
                   fillColor: Colors.grey[100],
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Campo vazio' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Campo vazio' : null,
               ),
               const SizedBox(height: 16),
 
+              // Reflexões (lista e botão)
               if (reflexoes.isNotEmpty) ...[
                 Text(
                   "Reflexões (${reflexoes.length}):",
@@ -110,17 +116,14 @@ class _AnotacaoState extends State<Anotacao> {
                       title: Text(entry.key),
                       subtitle: Text(entry.value),
                       trailing: IconButton(
-                        icon:
-                            const Icon(Icons.edit, color: Colors.amberAccent),
-                        onPressed: () =>
-                            _abrirDialogoReflexao(editQuestion: entry.key),
+                        icon: const Icon(Icons.edit, color: Colors.amberAccent),
+                        onPressed: () => _abrirDialogoReflexao(editQuestion: entry.key),
                       ),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
               ],
-
               Align(
                 alignment: Alignment.centerLeft,
                 child: ElevatedButton.icon(
@@ -129,13 +132,13 @@ class _AnotacaoState extends State<Anotacao> {
                   label: const Text("Adicionar Reflexão"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amberAccent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
 
+              // Botão de imagens
               Align(
                 alignment: Alignment.centerLeft,
                 child: ElevatedButton.icon(
@@ -147,12 +150,25 @@ class _AnotacaoState extends State<Anotacao> {
                   label: const Text("Adicionar imagem"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amberAccent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
               const SizedBox(height: 18),
+
+              // Mostrar apenas as imagens que serão enviadas
+              if (imagens.isNotEmpty)
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: imagens.length,
+                    itemBuilder: (_, i) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: mostrarImagem(imagens[i], altura: 100),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -163,18 +179,16 @@ class _AnotacaoState extends State<Anotacao> {
   void _abrirDialogoReflexao({String? editQuestion}) {
     final isEdit = editQuestion != null;
     String? selectedPergunta = editQuestion;
-    final respostaController = TextEditingController(
-        text: editQuestion != null ? reflexoes[editQuestion] : '');
+    final respostaController =
+        TextEditingController(text: isEdit ? reflexoes[editQuestion] : '');
     final localPerguntas = List<String>.from(perguntasPadroes);
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctxDialog, setStateDialog) {
-          final available = localPerguntas
-              .where((p) =>
-                  p == editQuestion || !reflexoes.containsKey(p))
-              .toList();
+          final available =
+              localPerguntas.where((p) => p == editQuestion || !reflexoes.containsKey(p)).toList();
 
           return AlertDialog(
             title: Text(isEdit ? 'Editar Reflexão' : 'Nova Reflexão'),
@@ -184,14 +198,11 @@ class _AnotacaoState extends State<Anotacao> {
                 children: [
                   DropdownButtonFormField<String>(
                     value: selectedPergunta,
-                    hint: const Text("Selecione uma pergunta"),
-                    items: available
-                        .map((p) =>
-                            DropdownMenuItem(value: p, child: Text(p)))
-                        .toList(),
+                    hint: const Text("Selecione uma reflexão"),
+                    items: available.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
                     onChanged: (v) => setStateDialog(() {
                       selectedPergunta = v;
-                      respostaController.text = reflexoes[v] ?? '';
+                      respostaController.text = v != null ? (reflexoes[v] ?? '') : '';
                     }),
                   ),
                   const SizedBox(height: 12),
@@ -210,8 +221,7 @@ class _AnotacaoState extends State<Anotacao> {
                           title: const Text('Pergunta Personalizada'),
                           content: TextField(
                             controller: novaPerguntaController,
-                            decoration:
-                                const InputDecoration(labelText: 'Pergunta'),
+                            decoration: const InputDecoration(labelText: 'Pergunta'),
                           ),
                           actions: [
                             TextButton(
@@ -220,10 +230,8 @@ class _AnotacaoState extends State<Anotacao> {
                             ),
                             ElevatedButton(
                               onPressed: () {
-                                final p =
-                                    novaPerguntaController.text.trim();
-                                if (p.isNotEmpty &&
-                                    !localPerguntas.contains(p)) {
+                                final p = novaPerguntaController.text.trim();
+                                if (p.isNotEmpty && !localPerguntas.contains(p)) {
                                   setStateDialog(() {
                                     localPerguntas.add(p);
                                     selectedPergunta = p;
@@ -239,7 +247,7 @@ class _AnotacaoState extends State<Anotacao> {
                       );
                     },
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text("Outra pergunta"),
+                    label: const Text("Personalizar reflexão"),
                   ),
                 ],
               ),
@@ -272,27 +280,42 @@ class _AnotacaoState extends State<Anotacao> {
     );
   }
 
-  void _registrarAnotacao() async {
+  Future<void> _registrarAnotacao() async {
     if (!_formKey.currentState!.validate()) return;
 
     try {
+      // Upload das imagens novas e coleta das URLs
+      final List<String> urlsFinais = [];
+      for (final img in imagens) {
+        final url = await uploadImagem(img, pasta: pasta);
+        if (url != null && url.isNotEmpty) {
+          urlsFinais.add(url);
+        }
+      }
+
       final dataDoc = {
         'texto': _textoController.text,
         'data': Timestamp.fromDate(widget.dia),
-        'emocao':
-            emocaoSelecionada.isNotEmpty ? emocaoSelecionada : null,
+        'emocao': emocaoSelecionada.isNotEmpty ? emocaoSelecionada : null,
         'temReflexoes': reflexoes.isNotEmpty,
         'perguntas': reflexoes.keys.toList(),
+        'imagens': urlsFinais, // salva as URLs das imagens enviadas
       };
 
       final docRef = await _userAnotacoesCol.add(dataDoc);
 
+      // Salva reflexões como subcoleção (se houver)
       for (var entry in reflexoes.entries) {
         await docRef.collection('reflexoes').add({
           'pergunta': entry.key,
           'resposta': entry.value,
         });
       }
+
+      // Limpa o estado local (imagens escolhidas) após salvar
+      setState(() {
+        imagens.clear();
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Anotação registrada com sucesso")),

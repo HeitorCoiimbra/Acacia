@@ -30,7 +30,7 @@ class _RespiracaoControladaState extends State<RespiracaoControlada> {
     timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
       setState(() {
         // quanto cada tick representa
-        double passo = fase == 0 ? 0.1 : 0.033; 
+        double passo = fase == 0 ? 0.1 : 0.02; 
 
         if (fase == 0) {
           // Inspirar (encher)
@@ -102,7 +102,7 @@ class _RespiracaoControladaState extends State<RespiracaoControlada> {
                     "Ajuda o corpo a acalmar.\n"
                     "Respire assim:\n"
                     "• Inspire curto (1s)\n"
-                    "• Solte devagar (3s)\n"
+                    "• Solte devagar (5s)\n"
                     "Siga o ritmo na tela.",
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16),

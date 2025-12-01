@@ -22,6 +22,7 @@ class _DiarioState extends State<Diario> {
   DateTime? dataInicio;
   DateTime? dataFim;
   bool comReflexoes = false;
+  bool comImagens = false; // novo filtro
 
   final List<String> perguntasFiltro = [
     'O que me deixou ansioso hoje?',
@@ -46,68 +47,71 @@ class _DiarioState extends State<Diario> {
         title: const Text('Diário', style: TextStyle(fontSize: 20)),
       ),
       body: Column(
-  children: [
-    Expanded(
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          TableCalendar(
-            focusedDay: diaSelecionado ?? diaFoco,
-            firstDay: DateTime.utc(2010, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            selectedDayPredicate: (d) => isSameDay(d, diaSelecionado),
-            rowHeight: 45,
-            daysOfWeekHeight: 30,
-            onDaySelected: (sel, foc) {
-              setState(() {
-                diaSelecionado = sel;
-                diaFoco = foc;
-              });
-              if (!sel.isAfter(DateTime.now())) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => Anotacao(dia: sel)),
-                );
-              }
-            },
-            calendarStyle: const CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Colors.amberAccent,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 24),
               children: [
-                ElevatedButton(
-                  onPressed: _abrirFiltroSheet,
-                  child: const Text('Filtros'),
+                TableCalendar(
+                  focusedDay: diaSelecionado ?? diaFoco,
+                  firstDay: DateTime.utc(2010, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  selectedDayPredicate: (d) => isSameDay(d, diaSelecionado),
+                  rowHeight: 45,
+                  daysOfWeekHeight: 30,
+                  onDaySelected: (sel, foc) {
+                    setState(() {
+                      diaSelecionado = sel;
+                      diaFoco = foc;
+                    });
+                    if (!sel.isAfter(DateTime.now())) {
+                      // 👉 sempre salva o momento atual
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Anotacao(dia: sel),
+                        ),
+                      );
+                    }
+                  },
+                  calendarStyle: const CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color: Colors.amberAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () => _listarPorFiltro(context),
-                  child: const Text('Listar anotações'),
+
+                const SizedBox(height: 16),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _abrirFiltroSheet,
+                        child: const Text('Filtros'),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () => _listarPorFiltro(context),
+                        child: const Text('Listar anotações'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
-    ),
-  ],
-),
-
     );
   }
 
   void _abrirFiltroSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) {
           return Padding(
@@ -174,6 +178,14 @@ class _DiarioState extends State<Diario> {
                 ),
                 const SizedBox(height: 16),
 
+                // 👉 novo filtro de imagens
+                CheckboxListTile(
+                  title: const Text('Somente com imagens'),
+                  value: comImagens,
+                  onChanged: (v) => setModal(() => comImagens = v!),
+                ),
+                const SizedBox(height: 16),
+
                 DropdownButtonFormField<String>(
                   value: perguntaSelecionada,
                   hint: const Text('Filtrar por pergunta'),
@@ -206,6 +218,9 @@ class _DiarioState extends State<Diario> {
     }
     if (comReflexoes) {
       query = query.where('temReflexoes', isEqualTo: true);
+    }
+    if (comImagens) {
+      query = query.where('temImagens', isEqualTo: true);
     }
     if (perguntaSelecionada != null) {
       query = query.where('perguntas', arrayContains: perguntaSelecionada);
