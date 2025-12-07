@@ -54,7 +54,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
-            label: "Dicas",
+            label: "Técnicas",
           ),
         ],
         currentIndex: paginaAtual,

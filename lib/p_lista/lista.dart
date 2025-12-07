@@ -154,26 +154,62 @@ class _ListaState extends State<Lista> {
   }
 
   // Remoção local (edição), sem persistir ainda; só será persistida ao salvar
-  void removerItemLocal(int linha, ObjLista item) {
+  void removerItemLocal(int linha, ObjLista item) async {
+  final lista = matrizDeListas[linha];
+  final idx = lista.indexOf(item);
+  if (idx != -1) {
     setState(() {
-      final lista = matrizDeListas[linha];
-      final idx = lista.indexOf(item);
-      if (idx != -1) {
-        lista.removeAt(idx);
-      }
+      lista.removeAt(idx);
+    });
+  }
 
-      if (lista.isEmpty) {
+  if (lista.isEmpty) {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Excluir lista"),
+        content: const Text("Deseja realmente excluir esta lista?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancelar"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Excluir"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      final docId = docIds[linha];
+      if (docId != null) {
+        await _userListasCol.doc(docId).delete();
+      }
+      setState(() {
         matrizDeListas.removeAt(linha);
         docIds.removeAt(linha);
         tituloControllers.removeAt(linha);
-        return;
-      }
-
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Lista excluída com sucesso")),
+      );
+    } else {
+      // Se cancelar, recria um item vazio para não perder a linha
+      setState(() {
+        matrizDeListas[linha] = [ObjLista()];
+      });
+    }
+  } else {
+    // Reorganiza posições
+    setState(() {
       for (var i = 0; i < lista.length; i++) {
         lista[i].posicao = i;
       }
     });
   }
+}
 
   Future<void> confirmarSalvarLista(int linha) async {
     final confirmar = await showDialog<bool>(

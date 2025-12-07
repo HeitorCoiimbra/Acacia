@@ -11,7 +11,7 @@ class Dicas extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Técnicas e Dicas para Ansiedade'),
+        title: const Text('Técnicas para Ansiedade'),
         backgroundColor: Colors.amberAccent,
       ),
       body: ListView(
